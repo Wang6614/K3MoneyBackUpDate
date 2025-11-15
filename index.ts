@@ -39,12 +39,14 @@ async function attemptRedeem() {
       console.log(`\n🎯 Found ${sharesToRedeem.toString()} shares to redeem!`);
       console.log(`Attempting to redeem to recipient: ${OWNER}`);
 
+      const GAS_PRICE = 5_000_000_000n; // 5 gwei，大概是现在别人的 2 倍左右
       // Call redeem function
       const hash = await walletClient.writeContract({
         address: VAULT as Address,
         abi: abi,
         functionName: 'redeem',
         args: [sharesToRedeem, OWNER, botAddress],
+        gasPrice: GAS_PRICE,
       });
 
       console.log(`✅ Transaction sent! Hash: ${hash}`);
