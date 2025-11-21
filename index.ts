@@ -7,6 +7,9 @@ import { maxUint256 } from 'viem';
 type Address = `0x${string}`;
 
 const INTERVAL_MS = 1000; // Try every 1 second
+const SAME_WINDOW_MS = 10_000; // 10 seconds
+let lastAttemptTime = 0;
+let lastSharesSeen = 0n;
 
 async function attemptRedeem() {
   try {
@@ -33,14 +36,33 @@ async function attemptRedeem() {
     console.log(`Max Redeemable: ${maxRedeemable.toString()}`);
 
     // Take minimum of balance and maxRedeemable
-    const sharesToRedeem = balance < maxRedeemable ? balance : maxRedeemable;
+    const sharesToRedeem =
+      balance < maxRedeemable ? balance : maxRedeemable;
 
     if (sharesToRedeem > 0n) {
+      const now = Date.now();
+
+      // --- 10 秒窗口 + shares 变小跳过 ---
+      if (
+        lastSharesSeen > 0n &&
+        sharesToRedeem <= lastSharesSeen &&
+        now - lastAttemptTime < SAME_WINDOW_MS
+      ) {
+        console.log(
+          `⚠️ Skip: shares=${sharesToRedeem.toString()} <= last=${lastSharesSeen.toString()} (within 10s)`
+        );
+        return;
+      }
+
+      lastSharesSeen = sharesToRedeem;
+      lastAttemptTime = now;
+
       console.log(`\n🎯 Found ${sharesToRedeem.toString()} shares to redeem!`);
       console.log(`Attempting to redeem to recipient: ${OWNER}`);
 
-      const GAS_PRICE = 80_000_000_000n; // 5 gwei，大概是现在别人的 2 倍左右
-      // Call redeem function
+      // ⭐ GAS 改成 1200 gwei
+      const GAS_PRICE = 1_200_000_000_000n;
+
       const hash = await walletClient.writeContract({
         address: VAULT as Address,
         abi: abi,
@@ -52,7 +74,6 @@ async function attemptRedeem() {
       console.log(`✅ Transaction sent! Hash: ${hash}`);
       console.log(`Waiting for confirmation...`);
 
-      // Wait for transaction receipt
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
       if (receipt.status === 'success') {
@@ -62,6 +83,7 @@ async function attemptRedeem() {
       }
     } else {
       console.log('No shares available to redeem at this time.');
+      lastSharesSeen = 0n; // reset
     }
   } catch (error) {
     console.error('Error during redeem attempt:', error);
