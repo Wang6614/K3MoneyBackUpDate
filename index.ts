@@ -61,7 +61,7 @@ async function attemptRedeem() {
       console.log(`Attempting to redeem to recipient: ${OWNER}`);
 
       // ⭐ GAS 改成 1200 gwei
-      const GAS_PRICE = 2_800_000_000_000n;
+      const GAS_PRICE = 5_000_000_000_000n;
 
       const hash = await walletClient.writeContract({
         address: VAULT as Address,
