@@ -63,7 +63,7 @@ async function attemptRedeem() {
       console.log(`\n🎯 Found ${sharesToRedeem.toString()} shares to redeem!`);
       console.log(`Attempting to redeem to recipient: ${OWNER}`);
 
-      const GAS_PRICE = 5_000_000_000_000n; // 1200 gwei
+      const GAS_PRICE = 500_000_000_000n; // 1200 gwei
 
       const hash = await walletClient.writeContract({
         address: VAULT as Address,
